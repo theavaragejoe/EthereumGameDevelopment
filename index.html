@@ -7,13 +7,25 @@
 
   <body>
       <h1>Epic Game</h1>
-//small change
+
           <script>
-          // configure the game (height, width, render-type, game loop function)
+
           var cursors;
           var knight;
           var crates;
+          var coinTimer;
 
+          var score = 0;
+          var scoreText;
+
+          var secondsLeft = 60;
+          var timeLeftText;
+          var timeLeftTimer;
+
+          var gameOver = false;
+
+
+          // configure the game (height, width, render-type, game loop function)
           var config = {
               width:800,
               height:500,
@@ -40,6 +52,7 @@
                 this.load.image("knight", "assets/knight.png");
                 this.load.image("crate", "assets/crate.png");
                 this.load.image("background","assets/background.png");
+                this.load.image("bitcoin","assets/bitcoin.png");
 
                 // load the run animation frame
                 this.load.image("run_frame_1","assets/knight/run/Run (1).png");
@@ -140,8 +153,74 @@
 
               this.physics.add.collider(crates, knight);
 
+              scoreText = this.add.text(16, 16, 'Bitcoin Bag: 0',
+                                                {fontSize: '32px',
+                                                  fill: '#000',
+                                                });
+
+              timeLeftText = this.add.text(16, 66, secondsLeft + "seconds left",
+                            {fontSize: '32px',
+                              fill: '#f00',
+                                });
+
+
               cursors = this.input.keyboard.createCursorKeys();
-            }
+
+              coinTimer = this.time.addEvent({
+                    delay: Phaser.Math.Between(1000,3000),
+                    callback: generateCoins,
+                    callbackScope: this,
+                    repeat: -1
+                  });
+
+
+
+                  timeLeftTimer = this.time.addEvent({
+                    delay: 1000,
+                    callback: updateTimeLeft,
+                    callbackScope: this,
+                    repeat: -1
+                  });
+
+                }
+
+                function updateTimeLeft(){
+                  if(gameOver) return;
+
+                  secondsLeft -= 1;
+                  timeLeftText.setText(secondsLeft + " seconds left");
+
+                  if(secondsLeft<= 0){
+                    this.physics.pause();
+                    gameOver = true;
+                  }
+                }
+
+
+                  function generateCoins(){
+                    var coins = this.physics.add.group({
+                      key: 'bitcoin',
+                      repeat: 1,
+                      setXY: {
+                        x: Phaser.Math.Between(0,800),
+                        y: -300,
+                        stepX: Phaser.Math.Between(30, 100)
+                      }
+            });
+
+                    coins.children.iterate(function(child) {
+                      child.setBounceY(Phaser.Math.FloatBetween(0.4, 1.5));
+            });
+
+                    this.physics.add.collider(coins, crates);
+                    this.physics.add.overlap(knight, coins, collectCoin, null, this)
+          }
+
+              function collectCoin(knight, coin){
+                coin.disableBody(true, true);
+                score +=1;
+                scoreText.setText("Bitcoin Bag: " + score);
+              }
 
               function gameUpdate(){
                   if(cursors.left.isDown){
